@@ -36,7 +36,8 @@ namespace QuickFix.Transport
         private Dictionary<SessionID, SocketInitiatorThread> threads_ = new Dictionary<SessionID, SocketInitiatorThread>();
         private Dictionary<SessionID, int> sessionToHostNum_ = new Dictionary<SessionID, int>();
         private object sync_ = new object();
-        
+        private ISocketInitiatorThreadFactory socketInitiatorThreadFactory_ = new DefaultSocketInitiatorThreadFactory();
+
         #endregion
 
         public SocketInitiator(IApplication application, IMessageStoreFactory storeFactory, SessionSettings settings)
@@ -50,6 +51,13 @@ namespace QuickFix.Transport
         public SocketInitiator(IApplication application, IMessageStoreFactory storeFactory, SessionSettings settings, ILogFactory logFactory, IMessageFactory messageFactory)
             : base(application, storeFactory, settings, logFactory, messageFactory)
         { }
+
+        public SocketInitiator(IApplication application, IMessageStoreFactory storeFactory, SessionSettings settings, ILogFactory logFactory, IMessageFactory messageFactory, ISocketInitiatorThreadFactory socketInitiatorThreadFactory)
+            : this(application, storeFactory, settings, logFactory, messageFactory)
+        {
+            socketInitiatorThreadFactory_ = socketInitiatorThreadFactory;
+        }
+
 
         public static void SocketInitiatorThreadStart(object socketInitiatorThread)
         {
@@ -257,7 +265,7 @@ namespace QuickFix.Transport
                 socketSettings.Configure(settings);
 
                 // Create a Ssl-SocketInitiatorThread if a certificate is given
-                SocketInitiatorThread t = new SocketInitiatorThread(this, session, socketEndPoint, socketSettings);                
+                SocketInitiatorThread t = socketInitiatorThreadFactory_.Create(this, session, socketEndPoint, socketSettings);                
                 t.Start();
                 AddThread(t);
 
